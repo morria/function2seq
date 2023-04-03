@@ -4,7 +4,7 @@ from pathlib import Path
 import random
 from typing import TextIO, Generator, Optional
 from collections import Counter
-# import tensorflow as tf
+import tensorflow as tf
 
 
 @dataclass
@@ -90,10 +90,28 @@ class TargetContexts:
                 yield target_context.name.subtokens()
 
     @staticmethod
+    def names_dataset_from_file(path: Path) -> tf.data.Dataset:
+        return tf.data.Dataset.from_generator(
+            lambda: TargetContexts.names_from_file(path),
+            output_types=tf.string,
+            output_shapes=tf.TensorShape([None]),
+        )
+
+    @staticmethod
+    def contexts_dataset_from_file(path: Path) -> tf.data.Dataset:
+        return tf.data.Dataset.from_generator(
+            lambda: TargetContexts.contexts_from_file(path),
+            output_types=tf.string,
+            output_shapes=tf.TensorShape([None]),
+            args=[path]
+        )
+
+    @staticmethod
     def contexts_from_file(path: Path) -> Generator[list[str], None, None]:
         for target_context in TargetContexts.from_file(path):
             for context in target_context.contexts:
-                yield context.to_tf_shape()
+                yield ['startofseq'] + context.to_tf_shape() + ['endofseq']
+                # yield context.to_tf_shape()
             # yield tf.keras.preprocessing.sequence.pad_sequences(
             #     [_.to_tf_shape()
             #         for _ in target_context.contexts], padding='post', dtype='str')
