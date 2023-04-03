@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  php2seq-devcontainer:
+    build:
+      context: .
+    image: "morria/php2seq-devcontainer:latest"
+    hostname: "php2seq"
+    container_name: "php2seq-devcontainer"
+    volumes:
+      - "..:/workspace:cached"
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"

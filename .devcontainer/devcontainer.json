@@ -1,0 +1,8 @@
+{
+	"name": "php2seq-devcontainer",
+	"dockerComposeFile": [
+		"docker-compose.yml"
+	],
+	"service": "php2seq-devcontainer",
+	"workspaceFolder": "/workspace"
+}
