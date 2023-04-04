@@ -1,0 +1,13 @@
+typeguard==2.13.3
+tqdm
+joblib
+numpy
+scikit-learn
+rouge
+networkx
+types-tensorflow
+tensorflow
+tensorflow-addons
+pep8
+pylint
+autopep8
