@@ -8,18 +8,23 @@ RUN apt-get -y install default-jdk
 
 RUN apt-get -y install php php-ast composer
 
+
 RUN pip install --upgrade pip
-RUN pip install typeguard==2.13.3
-RUN pip install tqdm
-RUN pip install joblib
-RUN pip install numpy
-RUN pip install scikit-learn
-RUN pip install rouge
-RUN pip install networkx
-RUN pip install types-tensorflow
-RUN pip install tensorflow
-RUN pip install tensorflow-addons
-RUN pip install pep8 pylint autopep8
+
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+# RUN pip install typeguard==2.13.3
+# RUN pip install tqdm
+# RUN pip install joblib
+# RUN pip install numpy
+# RUN pip install scikit-learn
+# RUN pip install rouge
+# RUN pip install networkx
+# RUN pip install types-tensorflow
+# RUN pip install tensorflow
+# RUN pip install tensorflow-addons
+# RUN pip install pep8 pylint autopep8
 
 RUN useradd -c '' -m -d /home/u -G sudo -s /bin/bash u
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers

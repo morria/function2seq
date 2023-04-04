@@ -12,7 +12,8 @@ def text_vectorization_layer(
     max_length: int,
     dataset: tf.data.Dataset,
     dataset_mtime: float,
-    directory_path: Path
+    directory_path: Path,
+    name: str,
 ) -> tf.keras.layers.TextVectorization:
     """
     Create a text vectorization layer from the given dataset and save it
@@ -23,7 +24,8 @@ def text_vectorization_layer(
 
     text_vec_layer = tf.keras.layers.TextVectorization(
         vocab_size,
-        output_sequence_length=max_length
+        output_sequence_length=max_length,
+        name=name
     )
     text_vec_layer.adapt(dataset)
     _persist_text_vectorization_layer(text_vec_layer, directory_path)
@@ -146,7 +148,10 @@ if __name__ == '__main__':
     #                                   'loaf',
     #                                   'of',
     #                                   'bread']))
+    # from function2seq.dataset import TargetContexts
     # # x = text_vec_layer(tf.constant(['one', 'day']))
-    # x = text_vec_layer(
-    #     [l for l in TargetContexts.contexts_dataset_from_file(
-    #         Path('data/input/eval.c2s'))])
+    # # x = text_vec_layer([l for l in TargetContexts.contexts_dataset_from_file( Path('data/input/eval.c2s'))])
+    # dataset = TargetContexts.contexts_dataset_from_file(
+    #     Path('data/input/eval.c2s'))
+    # x = dataset.map(text_vec_layer)
+    # print(x)

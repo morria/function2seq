@@ -1,5 +1,5 @@
 {
-	"name": "php2seq-devcontainer",
+	"name": "function2seq-devcontainer",
 	"dockerComposeFile": [
 		"docker-compose.yml"
 	],

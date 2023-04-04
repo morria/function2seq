@@ -2,7 +2,8 @@ version: '3.7'
 services:
   function2seq-devcontainer:
     build:
-      context: .
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     image: "morria/function2seq-devcontainer:latest"
     hostname: "function2seq"
     container_name: "function2seq-devcontainer"
