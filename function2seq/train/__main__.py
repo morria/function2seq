@@ -3,6 +3,7 @@ import logging
 from argparse import ArgumentParser
 from pathlib import Path
 from function2seq.train import train
+import tensorflow as tf
 
 
 def main():
@@ -11,8 +12,11 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
+    tf.get_logger().setLevel('INFO')
+    # tf.autograph.set_verbosity(1)
+
     parser = ArgumentParser(
-        prog='function2seq',
+        prog='function2seq.train',
         description='',
         epilog='',
     )

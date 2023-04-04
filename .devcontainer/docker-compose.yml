@@ -1,11 +1,11 @@
 version: '3.7'
 services:
-  php2seq-devcontainer:
+  function2seq-devcontainer:
     build:
       context: .
-    image: "morria/php2seq-devcontainer:latest"
-    hostname: "php2seq"
-    container_name: "php2seq-devcontainer"
+    image: "morria/function2seq-devcontainer:latest"
+    hostname: "function2seq"
+    container_name: "function2seq-devcontainer"
     volumes:
       - "..:/workspace:cached"
     # Overrides default command so things don't shut down after the process ends.

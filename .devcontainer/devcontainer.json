@@ -3,6 +3,6 @@
 	"dockerComposeFile": [
 		"docker-compose.yml"
 	],
-	"service": "php2seq-devcontainer",
+	"service": "function2seq-devcontainer",
 	"workspaceFolder": "/workspace"
 }

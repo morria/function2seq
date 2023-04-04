@@ -2,6 +2,8 @@ import tensorflow as tf
 import json
 from pathlib import Path
 
+__all__ = ['load_or_create_text_vectorization_layer']
+
 
 def load_or_create_text_vectorization_layer(
     vocab_size: int,

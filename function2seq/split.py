@@ -38,20 +38,20 @@ def split(
 
     datatype_file = {
         DataRole.TEST: open(
-            directory_pathname / 'target_contexts.test.c2s',
+            directory_pathname / 'test.c2s',
             'w'
         ),
         DataRole.TRAIN: open(
-            directory_pathname / 'target_contexts.train.c2s',
+            directory_pathname / 'train.c2s',
             'w'
         ),
         DataRole.EVALUATE: open(
-            directory_pathname / 'target_contexts.val.c2s',
+            directory_pathname / 'eval.c2s',
             'w'
         ),
     }
 
-    logging.getLogger('convert').info('Reading data')
+    logging.getLogger('function2seq').info('Reading data')
     with open(file_pathname) as file:
         reader = csv.reader(file, delimiter=' ')
         for row in reader:
@@ -89,7 +89,7 @@ def random_datarole(test_ratio: float, evaluation_ratio: float) -> DataRole:
 
 def main():
     parser = ArgumentParser(
-        prog='TestTrainValidationSplit',
+        prog='function2seq.split',
         description='Convert file mapping function names to contexts to a '
         + 'code2seq directory of files including test data, training '
         + 'data, evaluation data',
