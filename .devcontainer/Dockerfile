@@ -19,7 +19,7 @@ RUN pip install networkx
 RUN pip install types-tensorflow
 RUN pip install tensorflow
 RUN pip install tensorflow-addons
-RUN pip install autopep8
+RUN pip install pep8 pylint autopep8
 
 RUN useradd -c '' -m -d /home/u -G sudo -s /bin/bash u
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
