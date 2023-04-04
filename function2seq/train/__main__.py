@@ -20,22 +20,12 @@ def main():
         description='',
         epilog='',
     )
-    parser.add_argument('-icomplete', '--input-complete',
-                        type=str,
-                        help="The pathname of the file holding complete data'",
-                        required=True,
-                        )
-    parser.add_argument('-itest', '--input-test',
-                        type=str,
-                        help="The pathname of the file holding testing data'",
-                        required=True,
-                        )
-    parser.add_argument('-itrain', '--input-train',
+    parser.add_argument('-it', '--input-train',
                         type=str,
                         help="The pathname of the file holding training data'",
                         required=True,
                         )
-    parser.add_argument('-ieval', '--input-evaluation',
+    parser.add_argument('-iv', '--input-validation',
                         type=str,
                         help='The pathname of the file holding evaluation '
                         + 'data',
@@ -57,12 +47,10 @@ def main():
     args = parser.parse_args()
 
     train(
-        Path(args.input_complete),
-        Path(args.input_test),
         Path(args.input_train),
-        Path(args.input_evaluation),
+        Path(args.input_validation),
         Path(args.output_directory),
-        args.seed,
+        seed=args.seed,
     )
 
 

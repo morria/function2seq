@@ -1,65 +1,56 @@
 import tensorflow as tf
-from function2seq.train.vectors import load_or_create_text_vectorization_layer
+from function2seq.train.vectors import text_vectorization_layer
 import logging
 from typing import Optional
 import numpy as np
 from pathlib import Path
 from function2seq.dataset import TargetContexts
+import os
+import tensorflow_addons as tfa
 
 __all__ = ['train']
 
 
 def train(
-        complete_path: Path,
-        test_path: Path,
         train_path: Path,
-        eval_path: Path,
+        validation_path: Path,
         output_directory_path: Path,
-        seed: Optional[int] = None):
+        seed: Optional[int] = None,
+        vocab_size: int = 10000,
+        max_length: int = 50,
+        embed_size: int = 128,
+        lstm_dimension: int = 512,
+) -> None:
 
     if seed is not None:
         tf.random.set_seed(seed)
         np.random.seed(seed)
 
-    vocab_size = 10000
-    max_length = 50
-
-    logging.info('Creating text vectorizations for names')
-    text_vec_layer_name = load_or_create_text_vectorization_layer(
+    logging.info('Text vectorization for function names')
+    text_vec_layer_name = text_vectorization_layer(
         vocab_size,
         max_length,
-        TargetContexts.names_dataset_from_file(complete_path),
-        output_directory_path / 'vecs/name'
-    )
-    # print(text_vec_layer_name.get_vocabulary()[100:], flush=True)
+        TargetContexts.names_dataset_from_file(train_path).concatenate(
+            TargetContexts.names_dataset_from_file(validation_path)),
+        max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
+        output_directory_path / 'vecs/name')
 
-    logging.info('Creating text vectorizations for paths')
-    text_vec_layer_contexts = load_or_create_text_vectorization_layer(
+    logging.info('Text vectorization for context paths')
+    text_vec_layer_contexts = text_vectorization_layer(
         vocab_size,
         max_length,
-        TargetContexts.contexts_dataset_from_file(complete_path),
+        TargetContexts.contexts_dataset_from_file(train_path).concatenate(
+            TargetContexts.contexts_dataset_from_file(validation_path)
+        ),
+        max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
         output_directory_path / 'vecs/contexts'
     )
-    # print(text_vec_layer_contexts.get_vocabulary()[100:], flush=True)
 
-    logging.info('Creating datasets')
-    X_train = TargetContexts.names_dataset_from_file(train_path)
-    X_train_dec = TargetContexts.contexts_dataset_from_file(train_path)
-
-    X_valid = TargetContexts.names_dataset_from_file(eval_path)
-    X_valid_dec = TargetContexts.contexts_dataset_from_file(eval_path)
-
-    Y_train = text_vec_layer_contexts(
-        TargetContexts.contexts_dataset_from_file(train_path))
-    Y_valid = text_vec_layer_contexts(
-        TargetContexts.contexts_dataset_from_file(eval_path))
-
-    logging.info('Creating encoder and decoder inputs')
+    logging.info('Encoder and decoder inputs')
     encoder_inputs = tf.keras.layers.Input(shape=[], dtype=tf.string)
     decoder_inputs = tf.keras.layers.Input(shape=[], dtype=tf.string)
 
-    logging.info('Creating embedding layer')
-    embed_size = 128
+    logging.info('Embedding layer')
     encoder_input_ids = text_vec_layer_name(encoder_inputs)
     decoder_input_ids = text_vec_layer_contexts(decoder_inputs)
     encoder_embedding_layer = tf.keras.layers.Embedding(vocab_size, embed_size,
@@ -69,34 +60,41 @@ def train(
     encoder_embeddings = encoder_embedding_layer(encoder_input_ids)
     decoder_embeddings = decoder_embedding_layer(decoder_input_ids)
 
-    logging.info('Creating encoder')
-    encoder = tf.keras.layers.LSTM(512, return_state=True)
+    logging.info('Encoder')
+    encoder = tf.keras.layers.LSTM(lstm_dimension, return_state=True)
     _encoder_outputs, *encoder_state = encoder(encoder_embeddings)
 
-    logging.info('Creating decoder')
-    decoder = tf.keras.layers.LSTM(512, return_sequences=True)
+    logging.info('Decoder')
+    decoder = tf.keras.layers.LSTM(lstm_dimension, return_sequences=True)
     decoder_outputs = decoder(decoder_embeddings, initial_state=encoder_state)
 
-    logging.info('Creating output layer')
+    logging.info('Output layer')
     output_layer = tf.keras.layers.Dense(vocab_size, activation="softmax")
     Y_proba = output_layer(decoder_outputs)
 
-    # model = tf.keras.Model(inputs=[encoder_inputs, decoder_inputs],
-    #                        outputs=[Y_proba])
-    # model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam",
-    #               metrics=["accuracy"])
-    # model.fit((X_train, X_train_dec), Y_train, epochs=10,
-    #           validation_data=((X_valid, X_valid_dec), Y_valid))
-
-    logging.info('Creating model')
+    logging.info('Compiling model')
     model = tf.keras.Model(inputs=[encoder_inputs, decoder_inputs],
                            outputs=[Y_proba])
+
     logging.info('Compiling model')
     model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam",
                   metrics=["accuracy"])
+
+    logging.info('Datasets')
+    training_x = TargetContexts.names_dataset_from_file(train_path)
+    training_y = text_vec_layer_contexts(
+        [_ for _ in TargetContexts.contexts_dataset_from_file(train_path)]
+    )
+
+    validation_x = TargetContexts.names_dataset_from_file(validation_path)
+    validation_y = text_vec_layer_contexts(
+        [_ for _ in TargetContexts.contexts_dataset_from_file(validation_path)]
+    )
+
     logging.info('Fitting model')
-    model.fit((X_train, X_train_dec), Y_train, epochs=10,
-              validation_data=((X_valid, X_valid_dec), Y_valid))
+    model.fit(training_x, training_y, epochs=10,
+              validation_data=(validation_x, validation_y),
+              callbacks=[tfa.callbacks.TQDMProgressBar()])
 
     logging.info('Saving model')
     model.save(output_directory_path / 'model.keras',
