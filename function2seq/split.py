@@ -20,12 +20,12 @@ def split(
     directory_pathname: Path,
     seed: Optional[int],
     test_ratio: float,
-    evaluation_ratio: float,
+    validation_ratio: float,
     max_contexts: int,
 ) -> None:
     """
     Convert file mapping function names to contexts to a code2seq directory of
-    files including test data, training data, evaluation data and a dictionary
+    files including test data, training data, validation data and a dictionary
     of term frequencies.
     """
 
@@ -55,13 +55,10 @@ def split(
     with open(file_pathname) as file:
         reader = csv.reader(file, delimiter=' ')
         for row in reader:
-            # Skip broken rows
-            if len(row) < 2:
-                continue
-            row_assignment = random_datarole(test_ratio, evaluation_ratio)
-            target_context_list = TargetContexts.from_row(row)
-            target_context_list.sample_and_pad_contexts(max_contexts)
-            target_context_list.write_to_file(datatype_file[row_assignment])
+            row_assignment = random_datarole(test_ratio, validation_ratio)
+            target_contexts = TargetContexts.from_row(row)
+            target_contexts.sample_and_pad_contexts(max_contexts)
+            datatype_file[row_assignment].write(str(target_contexts) + "\n")
         file.close()
 
 
@@ -74,14 +71,14 @@ class DataRole(enum.Enum):
     EVALUATE = enum.auto()
 
 
-def random_datarole(test_ratio: float, evaluation_ratio: float) -> DataRole:
+def random_datarole(test_ratio: float, validation_ratio: float) -> DataRole:
     """
     Choose a data type based on the given ratios.
     """
     r = random.randint(0, 100000) / 100000
     if r <= test_ratio:
         return DataRole.TEST
-    elif r <= (test_ratio + evaluation_ratio):
+    elif r <= (test_ratio + validation_ratio):
         return DataRole.EVALUATE
     else:
         return DataRole.TRAIN
@@ -92,7 +89,7 @@ def main():
         prog='function2seq.split',
         description='Convert file mapping function names to contexts to a '
         + 'code2seq directory of files including test data, training '
-        + 'data, evaluation data',
+        + 'data, validation data',
         epilog='',
     )
     parser.add_argument('-i', '--input-file',
@@ -115,14 +112,14 @@ def main():
     parser.add_argument('-tr', '--test-ratio',
                         type=float,
                         help='The ratio ∊ [0.0, 1.0] of data to use as '
-                        + 'testing data (vs. as evaluation or training '
+                        + 'testing data (vs. as validation or training '
                         + 'data)',
                         default=0.2,
                         )
-    parser.add_argument('-er', '--evaluation-ratio',
+    parser.add_argument('-er', '--validation-ratio',
                         type=float,
                         help='The ratio ∊ [0.0, 1.0] of data to use as '
-                        + 'evaluation data (vs. as testing or '
+                        + 'validation data (vs. as testing or '
                         + 'training data)',
                         default=0.2,
                         )
@@ -139,7 +136,7 @@ def main():
         Path(args.output_directory),
         args.seed,
         args.test_ratio,
-        args.evaluation_ratio,
+        args.validation_ratio,
         args.max_contexts,
     )
 

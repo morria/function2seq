@@ -1,4 +1,3 @@
-typeguard==2.13.3
 tqdm
 joblib
 numpy
@@ -8,6 +7,8 @@ networkx
 types-tensorflow
 tensorflow
 tensorflow-addons
+typeguard==2.13.3
 pep8
 pylint
 autopep8
+pydot

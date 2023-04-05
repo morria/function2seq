@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Split",
+            "type": "python",
+            "request": "launch",
+            "module": "function2seq.split",
+            "justMyCode": true,
+            "args": [
+                "--input-file=sample/dataset.c2s",
+                "--output-directory=sample/input",
+                "--seed=42",
+                "--test-ratio=0.1",
+                "--validation-ratio=0.1"
+            ],
+        },
+        {
+            "name": "Train",
+            "type": "python",
+            "request": "launch",
+            "module": "function2seq.train",
+            "justMyCode": false,
+            "args": [
+                "--input-train=sample/input/train.c2s",
+                "--input-validation=sample/input/eval.c2s",
+                "--output-directory=sample/model",
+                "--seed=42"
+            ],
+        },
+        {
+            "name": "Predict",
+            "type": "python",
+            "request": "launch",
+            "module": "function2seq.predict",
+            "justMyCode": true,
+            "args": [
+                "--model-directory=sample/model",
+                "--seed=42"
+            ],
+        }
+    ]
+}

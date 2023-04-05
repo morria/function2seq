@@ -1,6 +1,6 @@
 {
     "python.analysis.typeCheckingMode": "strict",
     "python.linting.pycodestyleEnabled": true,
-    "editor.wordWrap": "on",
+    "editor.wordWrap": "off",
     "editor.wordWrapColumn": 79
 }

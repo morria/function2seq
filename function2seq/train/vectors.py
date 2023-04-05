@@ -9,7 +9,7 @@ __all__ = ['text_vectorization_layer']
 
 def text_vectorization_layer(
     vocab_size: int,
-    max_length: int,
+    output_sequence_length: int,
     dataset: tf.data.Dataset,
     dataset_mtime: float,
     directory_path: Path,
@@ -24,8 +24,9 @@ def text_vectorization_layer(
 
     text_vec_layer = tf.keras.layers.TextVectorization(
         vocab_size,
-        output_sequence_length=max_length,
-        name=name
+        output_sequence_length=output_sequence_length,
+        split=None,
+        name=name,
     )
     text_vec_layer.adapt(dataset)
     _persist_text_vectorization_layer(text_vec_layer, directory_path)
@@ -128,30 +129,24 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    text_vec = _read_text_vectorization_layer(Path(args.directory))
-    print(text_vec.get_vocabulary()[:100])
+    # text_vec = _read_text_vectorization_layer(Path(args.directory))
+    # print(text_vec.get_vocabulary()[:100])
 
     # text_vec_layer = tf.keras.layers.TextVectorization(
-    #     10,
-    #     output_sequence_length=50
+    #     3,
+    #     output_sequence_length=5,
+    #     split=None,
     # )
-    # text_vec_layer.adapt(tf.constant(['one',
-    #                                   'day',
-    #                                   'I',
-    #                                   'went',
-    #                                   'to',
-    #                                   'the',
-    #                                   'store',
-    #                                   'to',
-    #                                   'buy',
-    #                                   'a',
-    #                                   'loaf',
-    #                                   'of',
-    #                                   'bread']))
     # from function2seq.dataset import TargetContexts
-    # # x = text_vec_layer(tf.constant(['one', 'day']))
-    # # x = text_vec_layer([l for l in TargetContexts.contexts_dataset_from_file( Path('data/input/eval.c2s'))])
-    # dataset = TargetContexts.contexts_dataset_from_file(
-    #     Path('data/input/eval.c2s'))
+    # dataset = TargetContexts.names_dataset_from_file(Path('one.c2s'))
+    # text_vec_layer.adapt(dataset)
+
+    # text_vec_layer.adapt(tf.constant(['one day I went to the store to buy a loaf of bread', 'oh wow, this is a longy']))
+    # text_vec_layer.adapt(tf.constant(['one', 'day', 'I', 'went', 'to', 'the', 'store', 'to', 'buy', 'a', 'loaf', 'of', 'bread']))
+    # x = text_vec_layer(tf.constant(['I went']))
+    # x = text_vec_layer([l for l in TargetContexts.contexts_dataset_from_file( Path('data/input/eval.c2s'))])
     # x = dataset.map(text_vec_layer)
+    # dataset2 = TargetContexts.names_dataset_from_file(Path('one.c2s'))
+    # x = text_vec_layer([_ for _ in dataset2])
+    # # x = text_vec_layer(dataset2)
     # print(x)
