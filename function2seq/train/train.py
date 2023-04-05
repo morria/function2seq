@@ -63,7 +63,7 @@ def train(
         dtype=tf.string,
         name='encoder_inputs')
     decoder_inputs = tf.keras.layers.Input(
-        shape=(name_width,), dtype=tf.string, name='decoder_inputs')
+        shape=(name_width + 2,), dtype=tf.string, name='decoder_inputs')
 
     logging.info('Embedding layer')
     encoder_input_ids = text_vec_layer_contexts(encoder_inputs)
@@ -122,9 +122,10 @@ def train(
         for target_context in TargetContexts.from_file(file):
             for context in target_context.contexts:
                 x_encoder = context.fixed_width_list(name_width, context_width)
-                x_decoder = target_context.name.fixed_width_tokens(name_width)
+                x_decoder = target_context.name.fixed_width_tokens(
+                    name_width + 2)
                 y = text_vec_layer_name(
-                    target_context.name.fixed_width_tokens(name_width))
+                    target_context.name.fixed_width_tokens(name_width + 2))
 
                 encoder_input_data.append(x_encoder)
                 decoder_input_data.append(x_decoder)
@@ -151,8 +152,4 @@ def train(
             tfa.callbacks.TQDMProgressBar()])
 
     logging.info('Saving model')
-    model.save(
-        output_directory_path / 'model.tf',
-        overwrite=True,
-        save_format='tf'
-    )
+    model.save(output_directory_path / 'model.keras', overwrite=True)

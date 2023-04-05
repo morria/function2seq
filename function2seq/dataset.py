@@ -95,7 +95,7 @@ class TargetContexts:
     ) -> Generator[list[str], None, None]:
         for target_context in TargetContexts.from_file(path):
             for _ in target_context.contexts:
-                yield ['SOS'] + target_context.name.fixed_width_tokens(width) + ['EOS']
+                yield ['SOS'] + target_context.name.fixed_width_tokens(width - 2) + ['EOS']
 
     @ staticmethod
     def names_dataset_from_file(path: Path, width: int) -> tf.data.Dataset:
