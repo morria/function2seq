@@ -3,14 +3,16 @@ import json
 from pathlib import Path
 import os
 from argparse import ArgumentParser
+from typing import Generator
+import numpy as np
 
-__all__ = ['text_vectorization_layer']
+__all__ = ['text_vectorization_layer', 'text_vectorization_load']
 
 
 def text_vectorization_layer(
     vocab_size: int,
     output_sequence_length: int,
-    dataset: tf.data.Dataset,
+    dataset: Generator[list[str], None, None],
     dataset_mtime: float,
     directory_path: Path,
     name: str,
@@ -20,7 +22,7 @@ def text_vectorization_layer(
     to disk.
     """
     if _persisted_files_up_to_date(directory_path, dataset_mtime):
-        return _read_text_vectorization_layer(directory_path)
+        return text_vectorization_load(directory_path)
 
     text_vec_layer = tf.keras.layers.TextVectorization(
         vocab_size,
@@ -28,7 +30,12 @@ def text_vectorization_layer(
         split=None,
         name=name,
     )
-    text_vec_layer.adapt(dataset)
+
+    def m(d: Generator[list[str], None, None]):
+        for v in d:
+            yield np.array(v)
+
+    text_vec_layer.adapt(m(dataset))
     _persist_text_vectorization_layer(text_vec_layer, directory_path)
     return text_vec_layer
 
@@ -61,7 +68,7 @@ def _persisted_files_up_to_date(
     return True
 
 
-def _read_text_vectorization_layer(
+def text_vectorization_load(
     directory_path: Path
 ) -> tf.keras.layers.TextVectorization:
     """

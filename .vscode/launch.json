@@ -41,6 +41,19 @@
                 "--model-directory=sample/model",
                 "--seed=42"
             ],
-        }
+        },
+        {
+            "name": "Train Data",
+            "type": "python",
+            "request": "launch",
+            "module": "function2seq.train",
+            "justMyCode": false,
+            "args": [
+                "--input-train=data/input/train.c2s",
+                "--input-validation=data/input/eval.c2s",
+                "--output-directory=data/model",
+                "--seed=42"
+            ],
+        },
     ]
 }

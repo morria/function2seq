@@ -1,9 +1,8 @@
 from __future__ import annotations
-from typing import Generator, Optional
-import random
+from typing import Generator
 from pathlib import Path
 from dataclasses import dataclass
-import tensorflow as tf
+import random
 
 
 @dataclass
@@ -61,19 +60,15 @@ class Context:
         end = self.terminal_end_subtokens.fixed_width_tokens(terminal_width)
         return start + nodes + end
 
-    @ staticmethod
-    def empty_shape() -> list[str]:
-        return ['PAD', 'PAD', 'PAD']
-
     def __str__(self) -> str:
-        return f"{self.terminal_start_subtokens}" + ','
-        + f"{'|'.join([str(_) for _ in self.nodes])}" + ','
-        + f"{self.terminal_end_subtokens}"
+        return f"{str(self.terminal_start_subtokens)}" + ',' \
+            + f"{'|'.join([str(_) for _ in self.nodes])}" + ',' \
+            + f"{str(self.terminal_end_subtokens)}"
 
     def __repr__(self) -> str:
-        return f"Context({self.terminal_start_subtokens}"
-        + " → ... → "
-        + f"{self.terminal_end_subtokens})"
+        return f"Context({self.terminal_start_subtokens}" \
+            + " → ... → " \
+            + f"{self.terminal_end_subtokens})"
 
 
 @ dataclass
@@ -84,47 +79,24 @@ class TargetContexts:
     @ staticmethod
     def from_file(path: Path) -> Generator[TargetContexts, None, None]:
         with open(path, 'r') as file:
-            for line in file:
-                yield TargetContexts.from_string(line)
+            for line_number, line in enumerate(file, start=1):
+                try:
+                    yield TargetContexts.from_string(line)
+                except ValueError as error:
+                    raise ValueError(
+                        f'Error in {path} on line {line_number}: {error}')
             file.close()
 
     @ staticmethod
-    def names_from_file(
-        path: Path,
-        width: int
-    ) -> Generator[list[str], None, None]:
+    def names_from_file(path: Path) -> Generator[list[str], None, None]:
         for target_context in TargetContexts.from_file(path):
-            for _ in target_context.contexts:
-                yield ['SOS'] + target_context.name.fixed_width_tokens(width - 2) + ['EOS']
+            yield target_context.name.subtokens()
 
     @ staticmethod
-    def names_dataset_from_file(path: Path, width: int) -> tf.data.Dataset:
-        return tf.data.Dataset.from_generator(
-            lambda: TargetContexts.names_from_file(path, width),
-            output_types=tf.string,
-            output_shapes=tf.TensorShape([width]),
-            name='names'
-        )
-
-    @ staticmethod
-    def contexts_from_file(
-        path: Path,
-        width: int
-    ) -> Generator[list[str], None, None]:
+    def contexts_from_file(path: Path) -> Generator[list[str], None, None]:
         for target_context in TargetContexts.from_file(path):
             for context in target_context.contexts:
-                items = context.to_list()
-                fixed_width_items = items[:width] + [''] * (width - len(items))
-                yield fixed_width_items
-
-    @ staticmethod
-    def contexts_dataset_from_file(path: Path, width: int) -> tf.data.Dataset:
-        return tf.data.Dataset.from_generator(
-            lambda: TargetContexts.contexts_from_file(path, width),
-            output_types=tf.string,
-            output_shapes=tf.TensorShape([width]),
-            name='contexts'
-        )
+                yield context.to_list()
 
     @ staticmethod
     def from_string(string: str) -> TargetContexts:
@@ -137,6 +109,13 @@ class TargetContexts:
             raise ValueError(f'Invalid row: "{row}"')
         return TargetContexts(Subtokens.from_string(row[0]), [
                               Context.from_string(_) for _ in row[1:]])
+
+    def sampled(self, max_contexts: int) -> TargetContexts:
+        if max_contexts >= len(self.contexts):
+            return self
+        contexts = self.contexts
+        random.shuffle(contexts)
+        return TargetContexts(self.name, self.contexts[:max_contexts])
 
     def get_name(self) -> Subtokens:
         return self.name

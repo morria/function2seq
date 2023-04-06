@@ -34,8 +34,8 @@ def train(
     text_vec_layer_name = text_vectorization_layer(
         vocab_size,
         text_vector_output_sequence_length,
-        TargetContexts.names_dataset_from_file(train_path, name_width).concatenate(
-            TargetContexts.names_dataset_from_file(validation_path, name_width)),
+        # TODO: concatenate in eval data
+        TargetContexts.names_from_file(train_path),
         max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
         output_directory_path / 'vecs/name',
         "names"
@@ -45,9 +45,8 @@ def train(
     text_vec_layer_contexts = text_vectorization_layer(
         vocab_size,
         text_vector_output_sequence_length,
-        TargetContexts.contexts_dataset_from_file(train_path, context_width).concatenate(
-            TargetContexts.contexts_dataset_from_file(validation_path, context_width)
-        ),
+        # TODO: concatenate in eval data
+        TargetContexts.contexts_from_file(train_path),
         max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
         output_directory_path / 'vecs/contexts',
         "contexts"
@@ -122,10 +121,9 @@ def train(
         for target_context in TargetContexts.from_file(file):
             for context in target_context.contexts:
                 x_encoder = context.fixed_width_list(name_width, context_width)
-                x_decoder = target_context.name.fixed_width_tokens(
-                    name_width + 2)
-                y = text_vec_layer_name(
-                    target_context.name.fixed_width_tokens(name_width + 2))
+                x_decoder = ['SOS'] + target_context.name.fixed_width_tokens(
+                    name_width) + ['EOS']
+                y = text_vec_layer_name(x_decoder)
 
                 encoder_input_data.append(x_encoder)
                 decoder_input_data.append(x_decoder)
@@ -149,7 +147,23 @@ def train(
         steps_per_epoch=steps_per_epoch,
         validation_data=generator(validation_path),
         callbacks=[
-            tfa.callbacks.TQDMProgressBar()])
+            tfa.callbacks.TQDMProgressBar(),
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=output_directory_path / 'checkpoint',
+                save_weights_only=False,
+                monitor="val_loss",
+                mode="min",
+                save_best_only=True,
+                verbose=1,
+                save_freq='epoch'
+            ),
+            tf.keras.callbacks.BackupAndRestore(
+                output_directory_path / 'backup',
+                save_freq='epoch',
+                delete_checkpoint=True,
+                save_before_preemption=True
+            )
+        ])
 
     logging.info('Saving model')
     model.save(output_directory_path / 'model.keras', overwrite=True)

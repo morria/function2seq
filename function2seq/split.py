@@ -46,7 +46,7 @@ def split(
             'w'
         ),
         DataRole.EVALUATE: open(
-            directory_pathname / 'eval.c2s',
+            directory_pathname / 'validation.c2s',
             'w'
         ),
     }
@@ -57,7 +57,7 @@ def split(
         for row in reader:
             row_assignment = random_datarole(test_ratio, validation_ratio)
             target_contexts = TargetContexts.from_row(row)
-            target_contexts.sample_and_pad_contexts(max_contexts)
+            # target_contexts = target_contexts.sampled(max_contexts)
             datatype_file[row_assignment].write(str(target_contexts) + "\n")
         file.close()
 

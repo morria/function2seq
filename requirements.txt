@@ -1,13 +1,13 @@
+tensorflow==2.11
+tensorflow-addons==0.19
+typeguard==2.13.3
+types-tensorflow
 tqdm
 joblib
 numpy
 scikit-learn
 rouge
 networkx
-types-tensorflow
-tensorflow
-tensorflow-addons
-typeguard==2.13.3
 pep8
 pylint
 autopep8
