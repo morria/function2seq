@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Generator
+from typing import Generator, Optional
 from pathlib import Path
 from dataclasses import dataclass
 import random
@@ -16,8 +16,21 @@ class Subtokens:
     def subtokens(self) -> list[str]:
         return self.tokens
 
-    def fixed_width_tokens(self, width: int) -> list[str]:
-        return self.tokens[:width] + [''] * (width - len(self.tokens))
+    def fixed_width_tokens(
+            self,
+            width: int,
+            sos: Optional[str] = None,
+            eos: Optional[str] = None
+    ) -> list[str]:
+        t = self.tokens[:width]
+
+        if sos is not None:
+            t = [sos] + t[:(width - 1)]
+
+        if eos is not None:
+            t = t[:width - 1] + [eos]
+
+        return t + [''] * (width - len(t))
 
     def __str__(self) -> str:
         return '|'.join(self.tokens)
@@ -26,13 +39,13 @@ class Subtokens:
         return str(self)
 
 
-@dataclass
+@ dataclass
 class Context:
     terminal_start_subtokens: Subtokens
     nodes: list[str]
     terminal_end_subtokens: Subtokens
 
-    @staticmethod
+    @ staticmethod
     def from_string(string: str) -> Context:
         path = string.split(',')
         if len(path) != 3:
@@ -61,14 +74,18 @@ class Context:
         return start + nodes + end
 
     def __str__(self) -> str:
-        return f"{str(self.terminal_start_subtokens)}" + ',' \
-            + f"{'|'.join([str(_) for _ in self.nodes])}" + ',' \
-            + f"{str(self.terminal_end_subtokens)}"
+        return ','.join([
+            str(self.terminal_start_subtokens),
+            '|'.join([str(_) for _ in self.nodes]),
+            str(self.terminal_end_subtokens)
+        ])
 
     def __repr__(self) -> str:
-        return f"Context({self.terminal_start_subtokens}" \
-            + " → ... → " \
-            + f"{self.terminal_end_subtokens})"
+        return ''.join([
+            f"{self.terminal_start_subtokens}",
+            " → ... → ",
+            f"{self.terminal_end_subtokens})"
+        ])
 
 
 @ dataclass
@@ -88,9 +105,18 @@ class TargetContexts:
             file.close()
 
     @ staticmethod
-    def names_from_file(path: Path) -> Generator[list[str], None, None]:
-        for target_context in TargetContexts.from_file(path):
-            yield target_context.name.subtokens()
+    def tokens_from_files(*paths: Path) -> Generator[str, None, None]:
+        for path in paths:
+            for target_context in TargetContexts.from_file(path):
+                for token in target_context.name.subtokens():
+                    yield token
+                for context in target_context.contexts:
+                    for token in context.terminal_start_subtokens.subtokens():
+                        yield token
+                    for id in context.nodes:
+                        yield id
+                    for token in context.terminal_end_subtokens.subtokens():
+                        yield token
 
     @ staticmethod
     def contexts_from_file(path: Path) -> Generator[list[str], None, None]:

@@ -44,10 +44,13 @@ class ThreadSafeGenerator:
                     for context in target_context.contexts:
                         x_encoder = context.fixed_width_list(
                             self.name_width, self.context_width)
-                        x_decoder = ['SOS'] + \
-                            target_context.name.fixed_width_tokens(
-                                self.name_width
-                        ) + ['EOS']
+                        x_decoder = target_context.name.fixed_width_tokens(
+                            self.name_width,
+                            'SOS', 'EOS"'
+                        )
+                        # print(x_encoder)
+                        # print(self.text_vectorization_layer(x_encoder))
+                        # print(self.text_vectorization_layer(x_decoder))
                         y = self.text_vectorization_layer(x_decoder)
                         encoder_input_data.append(x_encoder)
                         decoder_input_data.append(x_decoder)

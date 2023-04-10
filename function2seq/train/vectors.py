@@ -12,7 +12,7 @@ __all__ = ['text_vectorization_layer', 'text_vectorization_load']
 def text_vectorization_layer(
     vocab_size: int,
     output_sequence_length: int,
-    dataset: Generator[list[str], None, None],
+    dataset: Generator[str, None, None],
     dataset_mtime: float,
     directory_path: Path,
     name: str,
@@ -31,11 +31,8 @@ def text_vectorization_layer(
         name=name,
     )
 
-    def m(d: Generator[list[str], None, None]):
-        for v in d:
-            yield np.array(v)
-
-    text_vec_layer.adapt(m(dataset))
+    text_vec_layer.adapt(
+        np.array([_ for _ in dataset] + ['SOS', 'EOS', 'UNK', '']))
     _persist_text_vectorization_layer(text_vec_layer, directory_path)
     return text_vec_layer
 

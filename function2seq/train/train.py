@@ -7,6 +7,7 @@ from typing import Optional
 from pathlib import Path
 from function2seq.dataset import TargetContexts
 import os
+from itertools import chain
 
 __all__ = ['train']
 
@@ -18,11 +19,11 @@ def train(
         seed: Optional[int] = None,
         name_width: int = 12,
         context_width: int = 12,
-        vocab_size: int = 1000,
-        text_vector_output_sequence_length: int = 50,
+        vocab_size: int = 9240,
+        text_vector_output_sequence_length: int = 36,
         embed_size: int = 128,
         lstm_dimension: int = 512,
-        epochs: int = 5,
+        epochs: int = 10,
         steps_per_epoch: int = 100,
         batch_size: int = 64,
         workers: int = 1,
@@ -32,26 +33,14 @@ def train(
         tf.random.set_seed(seed)
         np.random.seed(seed)
 
-    logging.info('Text vectorization for function names')
-    text_vec_layer_name = text_vectorization_layer(
+    logging.info('Text vectorization for function and terminal names')
+    text_vec_layer = text_vectorization_layer(
         vocab_size,
         text_vector_output_sequence_length,
-        # TODO: concatenate in eval data
-        TargetContexts.names_from_file(input_train),
+        TargetContexts.tokens_from_files(input_train, input_validation),
         max(os.path.getmtime(input_train), os.path.getmtime(input_validation)),
         output_directory / 'vecs/name',
         "names"
-    )
-
-    logging.info('Text vectorization for context paths')
-    text_vec_layer_contexts = text_vectorization_layer(
-        vocab_size,
-        text_vector_output_sequence_length,
-        # TODO: concatenate in eval data
-        TargetContexts.contexts_from_file(input_train),
-        max(os.path.getmtime(input_train), os.path.getmtime(input_validation)),
-        output_directory / 'vecs/contexts',
-        "contexts"
     )
 
     logging.info('Encoder and decoder inputs')
@@ -67,8 +56,8 @@ def train(
         shape=(name_width + 2,), dtype=tf.string, name='decoder_inputs')
 
     logging.info('Embedding layer')
-    encoder_input_ids = text_vec_layer_contexts(encoder_inputs)
-    decoder_input_ids = text_vec_layer_name(decoder_inputs)
+    encoder_input_ids = text_vec_layer(encoder_inputs)
+    decoder_input_ids = text_vec_layer(decoder_inputs)
     encoder_embedding_layer = tf.keras.layers.Embedding(
         vocab_size, embed_size, mask_zero=True, name='encoder_embedding')
     decoder_embedding_layer = tf.keras.layers.Embedding(
@@ -115,7 +104,7 @@ def train(
     def _data(path: Path):  # type: ignore
         return ThreadSafeGenerator(  # type: ignore
             path,
-            text_vectorization_layer=text_vec_layer_name,
+            text_vectorization_layer=text_vec_layer,
             batch_size=batch_size,
             name_width=name_width,
             context_width=context_width,
