@@ -121,9 +121,10 @@ def train(
             context_width=context_width,
         )
 
-    logging.info('Loading checkpoint weights')
     checkpoint_path = output_directory / 'checkpoint'
-    model.load_weights(checkpoint_path)
+    if os.path.isdir(checkpoint_path):
+        logging.info('Loading checkpoint weights')
+        model.load_weights(checkpoint_path)
 
     logging.info('Fitting model')
     _history = model.fit(
