@@ -26,7 +26,7 @@
             "justMyCode": false,
             "args": [
                 "--input-train=sample/input/train.c2s",
-                "--input-validation=sample/input/eval.c2s",
+                "--input-validation=sample/input/validation.c2s",
                 "--output-directory=sample/model",
                 "--seed=42"
             ],
@@ -50,7 +50,7 @@
             "justMyCode": false,
             "args": [
                 "--input-train=data/input/train.c2s",
-                "--input-validation=data/input/eval.c2s",
+                "--input-validation=data/input/validation.c2s",
                 "--output-directory=data/model",
                 "--seed=42"
             ],

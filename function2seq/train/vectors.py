@@ -136,24 +136,5 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    # text_vec = _read_text_vectorization_layer(Path(args.directory))
-    # print(text_vec.get_vocabulary()[:100])
-
-    # text_vec_layer = tf.keras.layers.TextVectorization(
-    #     3,
-    #     output_sequence_length=5,
-    #     split=None,
-    # )
-    # from function2seq.dataset import TargetContexts
-    # dataset = TargetContexts.names_dataset_from_file(Path('one.c2s'))
-    # text_vec_layer.adapt(dataset)
-
-    # text_vec_layer.adapt(tf.constant(['one day I went to the store to buy a loaf of bread', 'oh wow, this is a longy']))
-    # text_vec_layer.adapt(tf.constant(['one', 'day', 'I', 'went', 'to', 'the', 'store', 'to', 'buy', 'a', 'loaf', 'of', 'bread']))
-    # x = text_vec_layer(tf.constant(['I went']))
-    # x = text_vec_layer([l for l in TargetContexts.contexts_dataset_from_file( Path('data/input/eval.c2s'))])
-    # x = dataset.map(text_vec_layer)
-    # dataset2 = TargetContexts.names_dataset_from_file(Path('one.c2s'))
-    # x = text_vec_layer([_ for _ in dataset2])
-    # # x = text_vec_layer(dataset2)
-    # print(x)
+    text_vec = text_vectorization_load(Path(args.directory))
+    print(text_vec.get_vocabulary()[:100])

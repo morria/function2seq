@@ -1,20 +1,20 @@
 import tensorflow as tf
 from function2seq.train.vectors import text_vectorization_layer
+from function2seq.train.generator import ThreadSafeGenerator
 import logging
-from typing import Optional
 import numpy as np
+from typing import Optional
 from pathlib import Path
 from function2seq.dataset import TargetContexts
 import os
-import tensorflow_addons as tfa
 
 __all__ = ['train']
 
 
 def train(
-        train_path: Path,
-        validation_path: Path,
-        output_directory_path: Path,
+        input_train: Path,
+        input_validation: Path,
+        output_directory: Path,
         seed: Optional[int] = None,
         name_width: int = 12,
         context_width: int = 12,
@@ -22,8 +22,10 @@ def train(
         text_vector_output_sequence_length: int = 50,
         embed_size: int = 128,
         lstm_dimension: int = 512,
-        epochs: int = 10,
+        epochs: int = 5,
         steps_per_epoch: int = 100,
+        batch_size: int = 64,
+        workers: int = 11,
 ) -> None:
 
     if seed is not None:
@@ -35,9 +37,9 @@ def train(
         vocab_size,
         text_vector_output_sequence_length,
         # TODO: concatenate in eval data
-        TargetContexts.names_from_file(train_path),
-        max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
-        output_directory_path / 'vecs/name',
+        TargetContexts.names_from_file(input_train),
+        max(os.path.getmtime(input_train), os.path.getmtime(input_validation)),
+        output_directory / 'vecs/name',
         "names"
     )
 
@@ -46,9 +48,9 @@ def train(
         vocab_size,
         text_vector_output_sequence_length,
         # TODO: concatenate in eval data
-        TargetContexts.contexts_from_file(train_path),
-        max(os.path.getmtime(train_path), os.path.getmtime(validation_path)),
-        output_directory_path / 'vecs/contexts',
+        TargetContexts.contexts_from_file(input_train),
+        max(os.path.getmtime(input_train), os.path.getmtime(input_validation)),
+        output_directory / 'vecs/contexts',
         "contexts"
     )
 
@@ -99,71 +101,55 @@ def train(
     model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam",
                   metrics=["accuracy"])
 
-    logging.info('Plotting model to %s'.format(
-                 str(output_directory_path / 'model.png')))
+    logging.info('Plotting model to {}'.format(
+                 str(output_directory / 'model.png')))
     tf.keras.utils.plot_model(
         model,
-        to_file=output_directory_path / 'model.png',
+        to_file=output_directory / 'model.png',
         show_shapes=True,
         show_dtype=True,
         expand_nested=True,
-        show_layer_activations=True,
-        show_trainable=True
+        show_layer_activations=True
     )
 
-    logging.info('Training dataset')
+    def _data(path: Path):  # type: ignore
+        return ThreadSafeGenerator(  # type: ignore
+            path,
+            text_vectorization_layer=text_vec_layer_name,
+            batch_size=batch_size,
+            name_width=name_width,
+            context_width=context_width,
+        )
 
-    def generator(file: Path, batch_size: int = 32):
-        encoder_input_data: list[list[str]] = []
-        decoder_input_data: list[list[str]] = []
-        target_data: list[list[float]] = []
-
-        for target_context in TargetContexts.from_file(file):
-            for context in target_context.contexts:
-                x_encoder = context.fixed_width_list(name_width, context_width)
-                x_decoder = ['SOS'] + target_context.name.fixed_width_tokens(
-                    name_width) + ['EOS']
-                y = text_vec_layer_name(x_decoder)
-
-                encoder_input_data.append(x_encoder)
-                decoder_input_data.append(x_decoder)
-                target_data.append(y)
-
-                if len(encoder_input_data) == batch_size:
-                    yield (
-                        [np.array(encoder_input_data),
-                         np.array(decoder_input_data)
-                         ],
-                        np.array(target_data)
-                    )
-                    encoder_input_data = []
-                    decoder_input_data = []
-                    target_data = []
+    logging.info('Loading checkpoint weights')
+    checkpoint_path = output_directory / 'checkpoint'
+    model.load_weights(checkpoint_path)
 
     logging.info('Fitting model')
     _history = model.fit(
-        generator(train_path),
+        _data(input_train),
         epochs=epochs,
         steps_per_epoch=steps_per_epoch,
-        validation_data=generator(validation_path),
+        validation_data=_data(input_validation),
+        verbose='auto',
+        use_multiprocessing=(workers > 1),
+        workers=workers,
         callbacks=[
-            tfa.callbacks.TQDMProgressBar(),
             tf.keras.callbacks.ModelCheckpoint(
-                filepath=output_directory_path / 'checkpoint',
-                save_weights_only=False,
+                filepath=checkpoint_path,
+                save_weights_only=True,
                 monitor="val_loss",
                 mode="min",
                 save_best_only=True,
                 verbose=1,
-                save_freq='epoch'
-            ),
-            tf.keras.callbacks.BackupAndRestore(
-                output_directory_path / 'backup',
-                save_freq='epoch',
-                delete_checkpoint=True,
-                save_before_preemption=True
-            )
+                save_freq='epoch'),
+            # tf.keras.callbacks.BackupAndRestore(
+            #     output_directory /
+            #     'backup',
+            #     save_freq='epoch',
+            #     delete_checkpoint=True,
+            #     save_before_preemption=True)
         ])
 
     logging.info('Saving model')
-    model.save(output_directory_path / 'model.keras', overwrite=True)
+    model.save(output_directory / 'model.keras', overwrite=True)
