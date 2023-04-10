@@ -25,7 +25,7 @@ def train(
         epochs: int = 5,
         steps_per_epoch: int = 100,
         batch_size: int = 64,
-        workers: int = 11,
+        workers: int = 1,
 ) -> None:
 
     if seed is not None:

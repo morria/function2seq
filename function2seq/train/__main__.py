@@ -122,6 +122,13 @@ def main():
         help='Number of training samples per training batch',
         default=32,
     )
+    parser.add_argument(
+        '-w',
+        '--workers',
+        type=int,
+        help='Number of jobs to spawn',
+        default=1,
+    )
 
     args = parser.parse_args()
 
