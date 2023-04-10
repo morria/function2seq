@@ -101,16 +101,16 @@ def train(
     model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam",
                   metrics=["accuracy"])
 
-    logging.info('Plotting model to {}'.format(
-                 str(output_directory / 'model.png')))
-    tf.keras.utils.plot_model(
-        model,
-        to_file=output_directory / 'model.png',
-        show_shapes=True,
-        show_dtype=True,
-        expand_nested=True,
-        show_layer_activations=True
-    )
+    # logging.info('Plotting model to {}'.format(
+    #              str(output_directory / 'model.png')))
+    # tf.keras.utils.plot_model(
+    #     model,
+    #     to_file=output_directory / 'model.png',
+    #     show_shapes=True,
+    #     show_dtype=True,
+    #     expand_nested=True,
+    #     show_layer_activations=True
+    # )
 
     def _data(path: Path):  # type: ignore
         return ThreadSafeGenerator(  # type: ignore
@@ -121,7 +121,7 @@ def train(
             context_width=context_width,
         )
 
-    checkpoint_path = output_directory / 'checkpoint'
+    checkpoint_path = output_directory / 'checkpoint_weights'
     if os.path.isdir(checkpoint_path):
         logging.info('Loading checkpoint weights')
         model.load_weights(checkpoint_path)
@@ -138,19 +138,8 @@ def train(
         callbacks=[
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_path,
-                save_weights_only=True,
-                monitor="val_loss",
-                mode="min",
-                save_best_only=True,
-                verbose=1,
-                save_freq='epoch'),
-            # tf.keras.callbacks.BackupAndRestore(
-            #     output_directory /
-            #     'backup',
-            #     save_freq='epoch',
-            #     delete_checkpoint=True,
-            #     save_before_preemption=True)
+            ),
         ])
 
     logging.info('Saving model')
-    model.save(output_directory / 'model.keras', overwrite=True)
+    model.save(output_directory / 'model.tf', overwrite=True, save_format='tf')

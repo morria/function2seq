@@ -16,9 +16,10 @@ class ThreadSafeGenerator:
         context_width: int = 12,
     ):
         self.lock = threading.Lock()
+        self.iterator = enumerate(open(path, 'r'), start=1)
+
         self.path = path
         self.text_vectorization_layer = text_vectorization_layer
-        self.iterator = enumerate(open(path, 'r'), start=1)
         self.batch_size = batch_size
         self.name_width = name_width
         self.context_width = context_width
@@ -59,5 +60,6 @@ class ThreadSafeGenerator:
                         np.array(decoder_input_data)],
                     np.array(target_data)
                 )
+            raise StopIteration
         finally:
             self.lock.release()
