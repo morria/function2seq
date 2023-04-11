@@ -5,6 +5,7 @@ import os
 from argparse import ArgumentParser
 from typing import Generator
 import numpy as np
+from function2seq.dataset import TargetContexts
 
 __all__ = ['text_vectorization_layer', 'text_vectorization_load']
 
@@ -124,14 +125,64 @@ if __name__ == '__main__':
         description='',
         epilog='',
     )
+
+    def _type_file_path(string: str) -> Path:
+        if os.path.isfile(string):
+            return Path(string)
+        else:
+            raise ValueError(f"File not found: {string}")
+
+    def _type_directory_path(string: str) -> Path:
+        if os.path.isdir(string):
+            return Path(string)
+        else:
+            raise ValueError(f"Directory not found: {string}")
+
     parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
+        '-it', '--input-train',
+        type=_type_file_path,
+        help="The pathname of the file holding training data'",
+        required=True,
+    )
+    parser.add_argument(
+        '-iv', '--input-validation',
+        type=_type_file_path,
+        help='The pathname of the file holding evaluation '
+        + 'data',
+        required=True,
+    )
+    parser.add_argument(
+        '-vs',
+        '--vocab-size',
+        type=int,
+        help='Number of terms in text vectorization vocabulary',
+        default=1000,
+    )
+    parser.add_argument(
+        '-tvosl',
+        '--text-vector-output-sequence-length',
+        type=int,
+        help='Length of output sequence for text vectorization',
+        default=50,
+    )
+
+    parser.add_argument(
+        '-o',
+        '--output-directory',
+        type=_type_directory_path,
         help='The directory holding text vectorization layer config and vocab',
         required=True,
     )
     args = parser.parse_args()
 
-    text_vec = text_vectorization_load(Path(args.directory))
-    print(text_vec.get_vocabulary()[:100])
+    text_vec_layer = text_vectorization_layer(
+        args.vocab_size,
+        args.text_vector_output_sequence_length,
+        TargetContexts.tokens_from_files(args.input_train, args.input_validation),
+        max(os.path.getmtime(args.input_train), os.path.getmtime(args.input_validation)),
+        args.output_directory / 'text_vectors',
+        "text_vectors"
+    )
+
+    print(text_vec_layer.get_vocabulary()[:10])
+

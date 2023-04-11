@@ -7,7 +7,6 @@ from typing import Optional
 from pathlib import Path
 from function2seq.dataset import TargetContexts
 import os
-from itertools import chain
 
 __all__ = ['train']
 
@@ -39,8 +38,8 @@ def train(
         text_vector_output_sequence_length,
         TargetContexts.tokens_from_files(input_train, input_validation),
         max(os.path.getmtime(input_train), os.path.getmtime(input_validation)),
-        output_directory / 'vecs/name',
-        "names"
+        output_directory / 'text_vectors',
+        "text_vectors"
     )
 
     logging.info('Encoder and decoder inputs')
@@ -127,6 +126,10 @@ def train(
         callbacks=[
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_path,
+            ),
+            tf.keras.callbacks.TensorBoard(
+                log_dir=output_directory / 'logs',
+                histogram_freq=0
             ),
         ])
 

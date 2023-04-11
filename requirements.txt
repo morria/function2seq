@@ -14,3 +14,5 @@ autopep8
 pydot
 typing-extensions
 data-science-types
+tensorboard
+tensorboard_plugin_profile
