@@ -4,6 +4,7 @@ from function2seq.dataset import TargetContexts
 import tensorflow as tf
 import numpy as np
 from typing import Tuple
+from function2seq.constants import *
 
 
 class ThreadSafeGenerator:
@@ -46,11 +47,8 @@ class ThreadSafeGenerator:
                             self.name_width, self.context_width)
                         x_decoder = target_context.name.fixed_width_tokens(
                             self.name_width,
-                            'SOS', 'EOS"'
+                            SOS, EOS
                         )
-                        # print(x_encoder)
-                        # print(self.text_vectorization_layer(x_encoder))
-                        # print(self.text_vectorization_layer(x_decoder))
                         y = self.text_vectorization_layer(x_decoder)
                         encoder_input_data.append(x_encoder)
                         decoder_input_data.append(x_decoder)

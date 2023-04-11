@@ -3,6 +3,7 @@ from typing import Generator, Optional
 from pathlib import Path
 from dataclasses import dataclass
 import random
+from function2seq.constants import *
 
 
 @dataclass
@@ -30,7 +31,7 @@ class Subtokens:
         if eos is not None:
             t = t[:width - 1] + [eos]
 
-        return t + [''] * (width - len(t))
+        return t + [PAD] * (width - len(t))
 
     def __str__(self) -> str:
         return '|'.join(self.tokens)
@@ -69,7 +70,7 @@ class Context:
         start = self.terminal_start_subtokens.fixed_width_tokens(
             terminal_width)
         nodes = self.nodes[:nonterminal_width] + \
-            [''] * (nonterminal_width - len(self.nodes))
+            [PAD_ZERO] * (nonterminal_width - len(self.nodes))
         end = self.terminal_end_subtokens.fixed_width_tokens(terminal_width)
         return start + nodes + end
 
@@ -113,8 +114,6 @@ class TargetContexts:
                 for context in target_context.contexts:
                     for token in context.terminal_start_subtokens.subtokens():
                         yield token
-                    for id in context.nodes:
-                        yield id
                     for token in context.terminal_end_subtokens.subtokens():
                         yield token
 

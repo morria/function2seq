@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from typing import Generator
 import numpy as np
 from function2seq.dataset import TargetContexts
+from function2seq.constants import *
 
 __all__ = ['text_vectorization_layer', 'text_vectorization_load']
 
@@ -26,14 +27,28 @@ def text_vectorization_layer(
         return text_vectorization_load(directory_path)
 
     text_vec_layer = tf.keras.layers.TextVectorization(
-        vocab_size,
-        output_sequence_length=output_sequence_length,
+        max_tokens=vocab_size,
+        standardize='lower',
         split=None,
+        output_mode='int',
+        output_sequence_length=output_sequence_length,
         name=name,
     )
 
     text_vec_layer.adapt(
-        np.array([_ for _ in dataset] + ['SOS', 'EOS', 'UNK', '']))
+        tf.data.Dataset.from_generator(
+            lambda: dataset,
+            output_types=tf.string,
+            output_shapes=(),
+        )
+    )
+
+    # Insert required tokens
+    required_tokens = [SOS, EOS]
+    vocab = text_vec_layer.get_vocabulary()
+    vocab = [_ for _ in vocab if _ not in required_tokens] + required_tokens
+    text_vec_layer.set_vocabulary(vocab)
+
     _persist_text_vectorization_layer(text_vec_layer, directory_path)
     return text_vec_layer
 
@@ -133,10 +148,7 @@ if __name__ == '__main__':
             raise ValueError(f"File not found: {string}")
 
     def _type_directory_path(string: str) -> Path:
-        if os.path.isdir(string):
-            return Path(string)
-        else:
-            raise ValueError(f"Directory not found: {string}")
+        return Path(string)
 
     parser.add_argument(
         '-it', '--input-train',
@@ -177,12 +189,21 @@ if __name__ == '__main__':
 
     text_vec_layer = text_vectorization_layer(
         args.vocab_size,
-        args.text_vector_output_sequence_length,
-        TargetContexts.tokens_from_files(args.input_train, args.input_validation),
-        max(os.path.getmtime(args.input_train), os.path.getmtime(args.input_validation)),
-        args.output_directory / 'text_vectors',
-        "text_vectors"
-    )
+        output_sequence_length=args.text_vector_output_sequence_length,
+        dataset=TargetContexts.tokens_from_files(
+            args.input_train,
+            args.input_validation),
+        dataset_mtime=max(
+            os.path.getmtime(
+                args.input_train),
+            os.path.getmtime(
+                args.input_validation)),
+        directory_path=args.output_directory /
+        'text_vectors',
+        name="text_vectors")
 
     print(text_vec_layer.get_vocabulary()[:10])
-
+    # print('256', text_vec_layer(['256']))
+    # print('256 518', text_vec_layer(['256', '518']))
+    # print('518', text_vec_layer(['518']))
+    # print("['', '[UNK]', '256', '518', '132', '69', '768', '128', '535', '8']", text_vec_layer(['', '[UNK]', '256', '518', '132', '69', '768', '128', '535', '8']))

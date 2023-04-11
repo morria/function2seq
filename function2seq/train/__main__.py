@@ -78,14 +78,14 @@ def main():
         '--vocab-size',
         type=int,
         help='Number of terms in text vectorization vocabulary',
-        default=1000,
+        default=9240,
     )
     parser.add_argument(
         '-tvosl',
         '---text-vector-output-sequence-length',
         type=int,
         help='Length of output sequence for text vectorization',
-        default=50,
+        default=36,
     )
     parser.add_argument(
         '-es',
@@ -113,14 +113,14 @@ def main():
         '--steps-per-epoch',
         type=int,
         help='Number of steps per epochs to run',
-        default=10,
+        default=100,
     )
     parser.add_argument(
         '-bs',
         '--batch-size',
         type=int,
         help='Number of training samples per training batch',
-        default=32,
+        default=64,
     )
     parser.add_argument(
         '-w',

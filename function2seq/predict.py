@@ -3,25 +3,26 @@ import logging
 from pathlib import Path
 from function2seq.train.vectors import text_vectorization_load
 from function2seq.dataset import Context, Subtokens
+from function2seq.constants import *
 from argparse import ArgumentParser
 import numpy as np
 
 
 def predict(
-        model_directory_path: Path,
+        target_directory_path: Path,
         name_width: int = 12,
         context_width: int = 12,
 ) -> None:
     logging.info('Loading model')
     model = tf.keras.models.load_model(
-        model_directory_path / 'model.tf',
+        target_directory_path / FILENAME_MODEL,
     )
 
     logging.info('Loading text vectorization')
     # text_vec_layer_contexts = text_vectorization_load(
     #     model_directory_path / 'vecs/contexts')
-    text_vec_layer_name = text_vectorization_load(
-        model_directory_path / 'vecs/name')
+    text_vec_layer = text_vectorization_load(
+        target_directory_path / FILENAME_VECTORS)
 
     logging.info('Predicting')
 
@@ -39,8 +40,8 @@ def predict(
         )
 
         # Decoder Input
-        X_decoder = ['SOS'] + \
-            Subtokens(translation).fixed_width_tokens(name_width) + ['']
+        X_decoder = [SOS] + \
+            Subtokens(translation).fixed_width_tokens(name_width) + [PAD]
 
         X_encoder_np = np.expand_dims(np.array(X_encoder), axis=0)
         X_decoder_np = np.expand_dims(np.array(X_decoder), axis=0)
@@ -52,9 +53,9 @@ def predict(
         y = model.predict(batch)
         y_proba = y[0, word_idx]  # last token's probas
         predicted_word_id = np.argmax(y_proba)
-        predicted_word = text_vec_layer_name.get_vocabulary()[
+        predicted_word = text_vec_layer.get_vocabulary()[
             predicted_word_id]
-        if predicted_word == 'EOS':
+        if predicted_word == EOS:
             break
         translation += [predicted_word]
 
@@ -70,17 +71,17 @@ def main():
         epilog='',
     )
     parser.add_argument(
-        '-m',
-        '--model-directory',
+        '-t',
+        '--target-directory',
         type=str,
-        help="The pathname of the directory to load the model from'",
+        help="The pathname of the directory holding models and vectors'",
         required=True,
     )
 
     args = parser.parse_args()
 
     predict(
-        Path(args.model_directory),
+        Path(args.target_directory),
     )
 
 
